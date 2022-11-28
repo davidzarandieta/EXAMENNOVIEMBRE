@@ -41,6 +41,8 @@ module.exports = (sequelize, DataTypes) => {
     phone: DataTypes.STRING,
     logo: DataTypes.STRING,
     heroImage: DataTypes.STRING,
+    promoted: DataTypes.BOOLEAN,
+    expensive: DataTypes.BOOLEAN,
     status: {
       type: DataTypes.ENUM,
       values: [

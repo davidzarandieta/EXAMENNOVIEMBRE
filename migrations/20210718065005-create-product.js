@@ -28,6 +28,24 @@ module.exports = {
       availability: {
         type: Sequelize.BOOLEAN
       },
+      fats:{
+        type: Sequelize.DOUBLE
+      },
+      carbo:{
+        type: Sequelize.DOUBLE
+      },
+      proteins:{
+        type: Sequelize.DOUBLE
+      },
+      calories:{
+        type: Sequelize.DOUBLE
+      },
+      promoted:{
+        type: Sequelize.BOOLEAN
+      },
+      healthy:{
+        type: Sequelize.BOOLEAN
+      },
       restaurantId: {
         type: Sequelize.INTEGER,
         references: {

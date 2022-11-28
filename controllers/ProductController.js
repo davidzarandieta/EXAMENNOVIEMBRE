@@ -6,6 +6,7 @@ const Restaurant = models.Restaurant
 const RestaurantCategory = models.RestaurantCategory
 const Sequelize = require('sequelize')
 const { validationResult } = require('express-validator')
+const { sequelize } = require('../models')
 
 exports.indexRestaurant = async function (req, res) {
   try {
@@ -27,11 +28,14 @@ exports.create = async function (req, res) {
     res.status(422).send(err)
   } else {
     let newProduct = Product.build(req.body)
+    newProduct.calories = newProduct.fats*9+newProduct.proteins*4+newProduct.carbo*4
+    newProduct.healthy = healthyFunction(newProduct.restaurantId, newProduct.calories)
     if (typeof req.file !== 'undefined') {
       newProduct.image = req.file.path
     }
     try {
       newProduct = await newProduct.save()
+      actualizarExpensive(newProduct.restaurantId)
       res.json(newProduct)
     } catch (err) {
       if (err.name.includes('ValidationError')) {
@@ -40,6 +44,47 @@ exports.create = async function (req, res) {
         res.status(500).send(err)
       }
     }
+  }
+}
+
+const healthyFunction = async function (restaurantId, calories){
+  const listMediaCalorias = await Product.findOne({
+    where:{
+      restaurantId:restaurantId
+    },
+    attributes:[
+      [Sequelize.fn('AVG', sequelize.col('calories')),'avgCalories']
+    ]
+  })
+
+  const mediaCalorias = listMediaCalorias.dataValues.avgCalories
+  const healthy = calories<mediaCalorias
+  return healthy
+}
+
+const actualizarExpensive = async function(restaurantId) {
+  const mediaRestaurantes = await Product.findOne({
+    where:{
+      restaurantId: {[Sequelize.Op.ne]: restaurantId}
+    }, 
+    attributes:[
+      [Sequelize.fn('AVG', sequelize.col('price')), 'avgPrice']
+    ]
+  })
+  const mediaRestaurante = await Product.findOne({
+    where:{
+      restaurantId: restaurantId
+    },
+    attributes:[
+      [Sequelize.fn('AVG',sequelize.col('price')),'avgPrice']
+    ]
+  })
+
+  if (mediaRestaurante!==null && mediaRestaurantes!==null){
+    const mediaRestauranteInt= mediaRestaurante.dataValues.avgPrice
+    const mediaRestaurantesInt= mediaRestaurantes.dataValues.avgPrice
+    const resultado= mediaRestauranteInt>mediaRestaurantesInt
+    Restaurant.update({expensive:resultado},{where:{id:restaurantId}})
   }
 }
 
